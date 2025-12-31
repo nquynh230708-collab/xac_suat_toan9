@@ -13,7 +13,6 @@ st.markdown("""
     h1 { font-size: 70px !important; color: #1e3c72; text-align: center; margin-bottom: 20px; }
     h2 { font-size: 45px !important; color: #2a5298; border-bottom: 3px solid #1e3c72; }
     
-    /* Nút bấm khổng lồ */
     .stButton>button {
         width: 100% !important; height: 100px !important;
         font-size: 40px !important; font-weight: bold !important;
@@ -21,7 +20,6 @@ st.markdown("""
         color: white !important; border-radius: 20px !important;
     }
     
-    /* Khung chứa xúc xắc */
     .dice-container {
         display: flex; justify-content: center; align-items: center;
         height: 300px; background: white; border-radius: 30px;
@@ -29,21 +27,18 @@ st.markdown("""
     }
     .dice-img { width: 170px; height: 170px; margin: 0 20px; }
     
-    /* Tác giả góc trái */
     .author-footer {
         position: fixed; left: 30px; bottom: 30px; background-color: rgba(255, 255, 255, 0.9);
         padding: 15px; border-radius: 12px; border-left: 10px solid #1e3c72;
         font-size: 26px; font-weight: bold; color: #1e3c72; z-index: 1000;
     }
     
-    /* Đồng hồ đếm ngược */
     .timer-box {
         text-align: center; background: #000; color: #ff0000;
         font-family: 'Courier New', Courier, monospace;
         font-size: 75px; padding: 10px; border-radius: 15px; border: 4px solid #333;
     }
     
-    /* Khung Lý thuyết & Kết luận */
     .theory-box {
         background-color: #f0f7ff; padding: 25px; border-radius: 15px;
         border: 2px solid #2196f3; font-size: 28px; margin-bottom: 25px;
@@ -64,7 +59,7 @@ def play_sound(sound_type):
     st.components.v1.html(f"""<script>var audio = new Audio("{sound_urls[sound_type]}"); audio.play();</script>""", height=0)
 
 # --- HIỂN THỊ TÁC GIẢ ---
-st.markdown(f"""<div class="author-footer">Giáo viên: Trịnh Thị Như Quỳnh<br>Trường THCS Trần Hưng Đạo</div>""", unsafe_allow_html=True)
+st.markdown(f'<div class="author-footer">Giáo viên: Trịnh Thị Như Quỳnh<br>Trường THCS Trần Hưng Đạo</div>', unsafe_allow_html=True)
 
 st.write("# 🎲 THỰC NGHIỆM XÁC SUẤT")
 
@@ -132,4 +127,51 @@ with col_center:
             d1 = random.randint(1,6)
             d2 = random.randint(1,6) if num_dice == 2 else None
             res.append((d1, d2))
-        st.session_state.
+        st.session_state.all_results = res
+        
+        # Hiển thị hình ảnh kết quả cuối cùng
+        last = res[-1]
+        img_tag = f"<img src='{urls[last[0]]}' class='dice-img'>"
+        if num_dice == 2:
+            img_tag += f"<img src='{urls[last[1]]}' class='dice-img'>"
+        
+        placeholder.markdown(f"<div class='dice-container'>{img_tag}</div>", unsafe_allow_html=True)
+
+    if 'all_results' in st.session_state:
+        st.write("### 📊 Thống kê tần suất")
+        df_res = pd.DataFrame(st.session_state.all_results)
+        v_sum = df_res[0] if num_dice == 1 else df_res[0] + df_res[1]
+        counts = v_sum.value_counts().sort_index().reset_index()
+        counts.columns = ['Giá trị', 'Số lần']
+        st.table(counts)
+
+# --- CỘT 3: KẾT QUẢ ---
+with col_right:
+    st.write("## 📈 Kết quả")
+    data_ev = events[selected_name]
+    
+    st.markdown(f"""
+        <div class="theory-box">
+            <b style="color:#1e3c72;">📍 Không gian mẫu biến cố (A):</b><br>
+            <span style="color:#d32f2f; font-weight:bold;">A = {data_ev['sample']}</span><br><br>
+            <b style="color:#1e3c72;">🎯 Xác suất lý thuyết P(A):</b><br>
+            <span style="font-size:45px; color:#1565c0; font-weight:bold;">{data_ev['theory']}</span>
+        </div>
+    """, unsafe_allow_html=True)
+
+    if 'all_results' in st.session_state:
+        success_num = sum(1 for r in st.session_state.all_results if data_ev['fn'](r))
+        prob_exp_val = success_num / num_trials
+        
+        st.metric("XÁC SUẤT THỰC NGHIỆM P'(A)", f"{prob_exp_val:.2%}")
+        st.progress(prob_exp_val)
+        
+        st.markdown(f"""
+            <div class="conclusion-box">
+                <b>📌 KẾT LUẬN:</b><br>
+                Với n = {num_trials} lần gieo, xác suất thực nghiệm thu được là {prob_exp_val:.2%}. 
+                Số lần gieo càng lớn, giá trị này càng ổn định và gần với {data_ev['t_val']:.2%}.
+            </div>
+            """, unsafe_allow_html=True)
+    else:
+        st.info("Nhấn 'GIEO XÚC XẮC' để đối chiếu thực nghiệm!")
