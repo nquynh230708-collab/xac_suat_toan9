@@ -127,4 +127,51 @@ with col_center:
         st.session_state.all_results = res
         
         last = res[-1]
-        html = f"<div class='dice-container'><img src='{urls[last[0]]}'
+        html = f"<div class='dice-container'><img src='{urls[last[0]]}' class='dice-img'>"
+        if num_dice == 2: html += f"<img src='{urls[last[1]]}' class='dice-img'>"
+        html += "</div>"
+        placeholder.markdown(html, unsafe_allow_html=True)
+
+    if 'all_results' in st.session_state:
+        st.write("### 📊 Thống kê tần suất")
+        df = pd.DataFrame(st.session_state.all_results)
+        v = df[0] if num_dice == 1 else df[0] + df[1]
+        counts = v.value_counts().sort_index().reset_index()
+        counts.columns = ['Giá trị', 'Số lần']
+        st.table(counts)
+
+# --- CỘT 3: KẾT QUẢ - KHÔNG GIAN MẪU & LÝ THUYẾT ---
+with col_right:
+    st.write("## 📈 Kết quả")
+    
+    # Lấy dữ liệu bài toán đang chọn
+    data = events[selected_name]
+    
+    # LUÔN HIỂN THỊ KHÔNG GIAN MẪU VÀ LÝ THUYẾT
+    st.markdown(f"""
+        <div class="theory-box">
+            <b style="color:#1e3c72;">📍 Không gian mẫu của biến cố (A):</b><br>
+            <span style="color:#d32f2f; font-weight:bold;">A = {data['sample']}</span><br><br>
+            <b style="color:#1e3c72;">🎯 Xác suất lý thuyết P(A):</b><br>
+            <span style="font-size:45px; color:#1565c0; font-weight:bold;">{data['theory']}</span>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # CHỈ HIỂN THỊ THỰC NGHIỆM SAU KHI GIEO
+    if 'all_results' in st.session_state:
+        success = sum(1 for r in st.session_state.all_results if data['fn'](r))
+        prob_exp = success / num_trials
+        
+        st.metric("XÁC SUẤT THỰC NGHIỆM P'(A)", f"{prob_exp:.2%}")
+        st.progress(prob_exp)
+        st.write(f"👉 Biến cố xuất hiện **{success}** lần trên **{num_trials}** lần gieo.")
+        
+        st.markdown(f"""
+            <div class="conclusion-box">
+                <b>📌 KẾT LUẬN:</b><br>
+                Khi số lần gieo <b>n</b> ({num_trials}) đủ lớn, xác suất thực nghiệm ({prob_exp:.2%}) 
+                sẽ xấp xỉ bằng xác suất lý thuyết ({data['theory_val']:.2%}).
+            </div>
+            """, unsafe_allow_html=True)
+    else:
+        st.info("Hãy nhấn nút 'GIEO XÚC XẮC' để đối chiếu với kết quả thực nghiệm!")
