@@ -6,37 +6,47 @@ import time
 # --- CẤU HÌNH TRANG ---
 st.set_page_config(layout="wide", page_title="Xác suất - Trịnh Thị Như Quỳnh")
 
-# --- HỆ THỐNG CSS CHỮ SIÊU TO ---
+# --- HỆ THỐNG CSS CHỮ SIÊU TO CHO TIVI ---
 st.markdown("""
     <style>
     html, body, [class*="st-"] { font-size: 26px !important; }
     h1 { font-size: 70px !important; color: #1e3c72; text-align: center; margin-bottom: 20px; }
     h2 { font-size: 45px !important; color: #2a5298; border-bottom: 3px solid #1e3c72; }
+    
+    /* Nút bấm khổng lồ */
     .stButton>button {
         width: 100% !important; height: 100px !important;
         font-size: 40px !important; font-weight: bold !important;
         background: linear-gradient(135deg, #e52d27, #b31217) !important;
         color: white !important; border-radius: 20px !important;
     }
+    
+    /* Khung chứa xúc xắc */
     .dice-container {
         display: flex; justify-content: center; align-items: center;
-        height: 280px; background: white; border-radius: 30px;
+        height: 300px; background: white; border-radius: 30px;
         box-shadow: inset 0 0 30px rgba(0,0,0,0.1); margin: 20px 0; border: 1px solid #ddd;
     }
-    .dice-img { width: 160px; height: 160px; margin: 0 20px; }
+    .dice-img { width: 170px; height: 170px; margin: 0 20px; }
+    
+    /* Tác giả góc trái */
     .author-footer {
         position: fixed; left: 30px; bottom: 30px; background-color: rgba(255, 255, 255, 0.9);
         padding: 15px; border-radius: 12px; border-left: 10px solid #1e3c72;
         font-size: 26px; font-weight: bold; color: #1e3c72; z-index: 1000;
     }
+    
+    /* Đồng hồ đếm ngược */
     .timer-box {
         text-align: center; background: #000; color: #ff0000;
         font-family: 'Courier New', Courier, monospace;
-        font-size: 70px; padding: 10px; border-radius: 15px; border: 4px solid #333;
+        font-size: 75px; padding: 10px; border-radius: 15px; border: 4px solid #333;
     }
+    
+    /* Khung Lý thuyết & Kết luận */
     .theory-box {
-        background-color: #e3f2fd; padding: 25px; border-radius: 15px;
-        border: 2px solid #2196f3; font-size: 28px; margin-bottom: 25px; line-height: 1.6;
+        background-color: #f0f7ff; padding: 25px; border-radius: 15px;
+        border: 2px solid #2196f3; font-size: 28px; margin-bottom: 25px;
     }
     .conclusion-box {
         background-color: #fff9c4; padding: 25px; border-radius: 15px;
@@ -53,10 +63,11 @@ def play_sound(sound_type):
     }
     st.components.v1.html(f"""<script>var audio = new Audio("{sound_urls[sound_type]}"); audio.play();</script>""", height=0)
 
-# --- THÔNG TIN TÁC GIẢ ---
+# --- HIỂN THỊ TÁC GIẢ ---
 st.markdown(f"""<div class="author-footer">Giáo viên: Trịnh Thị Như Quỳnh<br>Trường THCS Trần Hưng Đạo</div>""", unsafe_allow_html=True)
 
 st.write("# 🎲 THỰC NGHIỆM XÁC SUẤT")
+
 col_left, col_center, col_right = st.columns([1.1, 1.4, 1.5])
 
 # --- CỘT 1: THIẾT LẬP ---
@@ -68,7 +79,7 @@ with col_left:
         events = {
             "Mặt chấm chẵn": {"fn": lambda x: x[0] % 2 == 0, "theory": "3/6 = 0.5", "t_val": 0.5, "sample": "{2; 4; 6}"},
             "Mặt chấm lẻ": {"fn": lambda x: x[0] % 2 != 0, "theory": "3/6 = 0.5", "t_val": 0.5, "sample": "{1; 3; 5}"},
-            "Mặt nguyên tố": {"fn": lambda x: x[0] in [2,3,5], "theory": "3/6 = 0.5", "t_val": 0.5, "sample": "{2; 3; 5}"},
+            "Mặt nguyên tố (2,3,5)": {"fn": lambda x: x[0] in [2,3,5], "theory": "3/6 = 0.5", "t_val": 0.5, "sample": "{2; 3; 5}"},
             "Mặt chấm > 4": {"fn": lambda x: x[0] > 4, "theory": "2/6 ≈ 0.33", "t_val": 2/6, "sample": "{5; 6}"},
             "Mặt 6 chấm": {"fn": lambda x: x[0] == 6, "theory": "1/6 ≈ 0.17", "t_val": 1/6, "sample": "{6}"}
         }
@@ -94,7 +105,7 @@ with col_left:
             if i == 0: play_sound("timer")
             time.sleep(1)
 
-# --- CỘT 2: HOẠT ĐỘNG GIEO ---
+# --- CỘT 2: HOẠT ĐỘNG ---
 with col_center:
     st.write("## 🎰 Hoạt động")
     placeholder = st.empty()
@@ -115,41 +126,10 @@ with col_center:
         placeholder.markdown(f"<div class='dice-container'><img src='{urls['rolling']}' class='dice-img'></div>", unsafe_allow_html=True)
         time.sleep(1.2)
         
-        res = [ (random.randint(1,6), random.randint(1,6) if num_dice==2 else None) for _ in range(num_trials) ]
-        st.session_state.all_results = res
-        
-        last = res[-1]
-        img_html = f"<img src='{urls[last[0]]}' class='dice-img'>"
-        if num_dice == 2:
-            img_html += f"<img src='{urls[last[1]]}' class='dice-img'>"
-        
-        placeholder.markdown(f"<div class='dice-container'>{img_html}</div>", unsafe_allow_html=True)
-
-    if 'all_results' in st.session_state:
-        st.write("### 📊 Thống kê tần suất")
-        df = pd.DataFrame(st.session_state.all_results)
-        v = df[0] if num_dice == 1 else df[0] + df[1]
-        counts = v.value_counts().sort_index().reset_index()
-        counts.columns = ['Giá trị', 'Số lần']
-        st.table(counts)
-
-# --- CỘT 3: KẾT QUẢ ---
-with col_right:
-    st.write("## 📈 Kết quả")
-    data = events[selected_name]
-    
-    st.markdown(f"""
-        <div class="theory-box">
-            <b>📍 Không gian mẫu biến cố (A):</b><br>
-            <span style="color:#d32f2f; font-weight:bold;">A = {data['sample']}</span><br><br>
-            <b>🎯 Xác suất lý thuyết P(A):</b><br>
-            <span style="font-size:45px; color:#1565c0; font-weight:bold;">{data['theory']}</span>
-        </div>
-    """, unsafe_allow_html=True)
-
-    if 'all_results' in st.session_state:
-        success = sum(1 for r in st.session_state.all_results if data['fn'](r))
-        prob_exp = success / num_trials
-        
-        st.metric("XÁC SUẤT THỰC NGHIỆM P'(A)", f"{prob_exp:.2%}")
-        st.progress(prob_exp)
+        # Tạo kết quả ngẫu nhiên
+        res = []
+        for _ in range(num_trials):
+            d1 = random.randint(1,6)
+            d2 = random.randint(1,6) if num_dice == 2 else None
+            res.append((d1, d2))
+        st.session_state.
