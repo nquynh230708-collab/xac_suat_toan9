@@ -4,7 +4,7 @@ import pandas as pd
 import time
 
 # 1. CẤU HÌNH TRANG RỘNG
-st.set_page_config(layout="wide", page_title="Dice Master Pro - Nguyễn Thị Như Quỳnh")
+st.set_page_config(layout="wide", page_title="Dice Master Pro - Trịnh Thị Như Quỳnh")
 
 # 2. HỆ THỐNG CSS ĐẶC BIỆT CHO TRÌNH CHIẾU TIVI (CHỮ SIÊU TO)
 st.markdown("""
@@ -187,3 +187,4 @@ with col_right:
             """, unsafe_allow_html=True)
     else:
         st.info("Mời cô nhấn nút 'GIEO XÚC XẮC' để bắt đầu phân tích kết quả.")
+
