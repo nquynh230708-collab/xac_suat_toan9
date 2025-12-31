@@ -3,108 +3,128 @@ import random
 import pandas as pd
 import time
 
-# 1. Cấu hình màn hình tỉ lệ 16:9
+# 1. CẤU HÌNH TRANG RỘNG
 st.set_page_config(layout="wide", page_title="Dice Master Pro - Nguyễn Thị Như Quỳnh")
 
-# 2. CSS NÂNG CẤP: Tăng kích thước chữ và tùy chỉnh giao diện
+# 2. HỆ THỐNG CSS ĐẶC BIỆT CHO TRÌNH CHIẾU TIVI (CHỮ SIÊU TO)
 st.markdown("""
     <style>
-    /* Tăng cỡ chữ toàn bộ ứng dụng */
+    /* Phóng to chữ toàn bộ trang */
     html, body, [class*="st-"] {
-        font-size: 24px !important; /* Gấp đôi cỡ chữ bình thường */
+        font-size: 30px !important; /* Cỡ chữ cực đại cho học sinh ngồi xa */
+        font-family: 'Arial', sans-serif;
     }
-    h1 { font-size: 4rem !important; }
-    h2 { font-size: 3rem !important; }
-    h3 { font-size: 2.5rem !important; }
     
-    /* Tăng kích thước nút bấm */
+    /* Chỉnh cỡ chữ cho các tiêu đề */
+    h1 { font-size: 80px !important; color: #1e3c72; text-align: center; }
+    h2 { font-size: 55px !important; color: #2a5298; border-bottom: 3px solid #ccc; }
+    h3 { font-size: 45px !important; }
+
+    /* Phóng to nút bấm gieo */
     .stButton>button {
-        height: 80px !important;
-        font-size: 30px !important;
-        border-radius: 15px !important;
-        background: linear-gradient(135deg, #1e3c72, #2a5298);
-        color: white;
+        width: 100% !important;
+        height: 120px !important;
+        font-size: 45px !important;
+        font-weight: bold !important;
+        background: linear-gradient(135deg, #FF4B2B, #FF416C) !important;
+        color: white !important;
+        border-radius: 20px !important;
+        border: none !important;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.3) !important;
     }
-    
-    /* Thông tin tác giả */
-    .author-info {
-        position: fixed;
-        left: 20px;
-        bottom: 20px;
-        font-size: 22px;
-        color: #555;
-        border-left: 5px solid #1e3c72;
-        padding-left: 10px;
-        z-index: 100;
-    }
-    
-    /* Hiệu ứng xúc xắc */
-    .dice-box {
+
+    /* Khung hiển thị xúc xắc */
+    .dice-container {
         display: flex; justify-content: center; align-items: center;
-        height: 250px; background: #fff; border-radius: 30px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        height: 300px; background: white; border-radius: 30px;
+        box-shadow: inset 0 0 30px rgba(0,0,0,0.1); margin: 20px 0;
     }
-    .dice-img { width: 150px; height: 150px; }
+    .dice-img { width: 180px; height: 180px; margin: 0 20px; }
+
+    /* Thông tin tác giả góc trái dưới */
+    .author-footer {
+        position: fixed;
+        left: 30px;
+        bottom: 30px;
+        background-color: rgba(255, 255, 255, 0.8);
+        padding: 15px;
+        border-radius: 10px;
+        border-left: 8px solid #1e3c72;
+        font-size: 28px;
+        color: #333;
+        z-index: 1000;
+        line-height: 1.4;
+    }
+
+    /* Bảng số liệu to */
+    .stTable { font-size: 35px !important; }
     
-    /* Phóng to bảng số liệu */
-    .stDataFrame td, .stDataFrame th { font-size: 22px !important; }
+    /* Kết luận sư phạm */
+    .conclusion-box {
+        background-color: #fff9c4;
+        padding: 25px;
+        border-radius: 15px;
+        border: 4px dashed #fbc02d;
+        font-size: 32px;
+        color: #000;
+        margin-top: 30px;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# 3. Hàm phát âm thanh (Xúc xắc & Click)
-def play_sound(sound_type="dice"):
-    sounds = {
+# 3. HÀM PHÁT ÂM THANH
+def trigger_sound(sound_type):
+    urls = {
         "dice": "https://www.soundjay.com/misc/sounds/dice-roll-1.mp3",
         "click": "https://www.soundjay.com/buttons/sounds/button-16.mp3"
     }
     st.components.v1.html(f"""
         <script>
-            var audio = new Audio("{sounds[sound_type]}");
+            var audio = new Audio("{urls[sound_type]}");
             audio.play();
         </script>
     """, height=0)
 
-# --- THÔNG TIN TÁC GIẢ GÓC TRÁI DƯỚI ---
-st.markdown("""
-    <div class="author-info">
+# 4. HIỂN THỊ THÔNG TIN TÁC GIẢ
+st.markdown(f"""
+    <div class="author-footer">
         <b>Giáo viên:</b> Nguyễn Thị Như Quỳnh<br>
         <b>Trường:</b> THCS Trần Hưng Đạo
     </div>
     """, unsafe_allow_html=True)
 
-st.title("🎲 Mô phỏng Xác suất Xúc xắc")
+# 5. GIAO DIỆN CHÍNH
+st.write("# 🎲 MÔ PHỎNG XÚC XẮC")
 
-# --- CHIA LAYOUT 1/4 : 3/8 : 3/8 ---
 col_left, col_center, col_right = st.columns([1, 1.5, 1.5])
 
+# --- CỘT 1: CÀI ĐẶT ---
 with col_left:
-    st.header("⚙️ Cài đặt")
-    num_dice = st.selectbox("Số lượng xúc xắc", [1, 2], on_change=lambda: play_sound("click"))
+    st.write("## ⚙️ Cài đặt")
+    num_dice = st.radio("Chọn số xúc xắc:", [1, 2], horizontal=True)
     
     if num_dice == 1:
         events = {
             "Mặt chấm lẻ": lambda x: x[0] % 2 != 0,
-            "Mặt chấm > 3": lambda x: x[0] > 3,
-            "Mặt chấm là số nguyên tố": lambda x: x[0] in [2, 3, 5]
+            "Mặt chấm >= 4": lambda x: x[0] >= 4,
+            "Mặt 6 chấm": lambda x: x[0] == 6
         }
     else:
         events = {
-            "Tổng số chấm là số chẵn": lambda x: sum(x) % 2 == 0,
-            "Tổng số chấm chia hết cho 3": lambda x: sum(x) % 3 == 0,
-            "Tổng số chấm bằng 7": lambda x: sum(x) == 7
+            "Tổng là số chẵn": lambda x: sum(x) % 2 == 0,
+            "Tổng bằng 7": lambda x: sum(x) == 7,
+            "Ít nhất một mặt 6": lambda x: 6 in x
         }
-    
-    selected_event = st.selectbox("Chọn biến cố", list(events.keys()), on_change=lambda: play_sound("click"))
-    num_trials = st.select_slider("Số lần thực nghiệm", options=[10, 100, 500, 1000, 5000], value=100)
-    
-    # Nút bấm chính
-    btn_run = st.button("🚀 BẮT ĐẦU GIEO")
+        
+    selected_event = st.selectbox("Biến cố quan sát:", list(events.keys()))
+    num_trials = st.select_slider("Số lần gieo:", options=[10, 100, 500, 1000, 5000], value=100)
 
+# --- CỘT 2: HOẠT ĐỘNG ---
 with col_center:
-    st.header("🎰 Hoạt động")
+    st.write("## 🎰 Hoạt động")
     placeholder = st.empty()
     
-    dice_urls = {
+    urls = {
         1: "https://upload.wikimedia.org/wikipedia/commons/1/1b/Dice-1-b.svg",
         2: "https://upload.wikimedia.org/wikipedia/commons/5/5f/Dice-2-b.svg",
         3: "https://upload.wikimedia.org/wikipedia/commons/b/b1/Dice-3-b.svg",
@@ -114,47 +134,56 @@ with col_center:
         "rolling": "https://upload.wikimedia.org/wikipedia/commons/a/a5/Dice_rolling.gif"
     }
 
-    if btn_run:
-        play_sound("dice") # Âm thanh gieo xúc xắc
-        placeholder.markdown(f"<div class='dice-box'><img src='{dice_urls['rolling']}' class='dice-img'></div>", unsafe_allow_html=True)
-        time.sleep(1.2)
+    if st.button("🚀 GIEO XÚC XẮC"):
+        trigger_sound("dice")
+        # Hiệu ứng gieo
+        placeholder.markdown(f"<div class='dice-container'><img src='{urls['rolling']}' class='dice-img'></div>", unsafe_allow_html=True)
+        time.sleep(1.5)
         
+        # Tính kết quả
         results = []
         for _ in range(num_trials):
             r1 = random.randint(1, 6)
             r2 = random.randint(1, 6) if num_dice == 2 else None
             results.append((r1, r2) if r2 else (r1,))
-        st.session_state.data = results
+        st.session_state.results = results
         
+        # Hiện kết quả cuối
         last = results[-1]
-        html = f"<div class='dice-box'><img src='{dice_urls[last[0]]}' class='dice-img'>"
+        html = f"<div class='dice-container'><img src='{urls[last[0]]}' class='dice-img'>"
         if num_dice == 2:
-            html += f"<img src='{dice_urls[last[1]]}' class='dice-img' style='margin-left:30px'>"
+            html += f"<img src='{urls[last[1]]}' class='dice-img'>"
         html += "</div>"
         placeholder.markdown(html, unsafe_allow_html=True)
 
-    if 'data' in st.session_state:
-        df = pd.DataFrame(st.session_state.data)
-        st.write("### 📊 Bảng tần suất:")
-        if num_dice == 1:
-            stats = df[0].value_counts().sort_index()
-        else:
-            stats = (df[0]+df[1]).value_counts().sort_index()
-        st.table(stats)
+    if 'results' in st.session_state:
+        st.write("### 📝 Thống kê tần suất")
+        df = pd.DataFrame(st.session_state.results)
+        val_col = df[0] if num_dice == 1 else df[0] + df[1]
+        counts = val_col.value_counts().sort_index().reset_index()
+        counts.columns = ['Giá trị', 'Số lần']
+        st.table(counts)
 
+# --- CỘT 3: KẾT LUẬN ---
 with col_right:
-    st.header("🔍 Kết quả")
-    if 'data' in st.session_state:
-        check = events[selected_event]
-        success = sum(1 for r in st.session_state.data if check(r))
-        prob = success / num_trials
+    st.write("## 📊 Phân tích")
+    if 'results' in st.session_state:
+        check_fn = events[selected_event]
+        success_count = sum(1 for r in st.session_state.results if check_fn(r))
+        prob = success_count / num_trials
         
+        st.write(f"**Biến cố:** {selected_event}")
         st.metric("Xác suất thực nghiệm", f"{prob:.2%}")
         st.progress(prob)
         
+        # CÂU KẾT LUẬN CỦA GIÁO VIÊN
         st.markdown(f"""
-        <div style="background-color: #e1f5fe; padding: 20px; border-radius: 10px; border-left: 10px solid #01579b;">
-            <p><b>📝 Kết luận:</b> Khi số lần thực nghiệm (n = {num_trials}) càng <b>lớn</b>, 
-            xác suất thực nghiệm sẽ càng tiến gần đến xác suất lý thuyết của biến cố.</p>
-        </div>
-        """, unsafe_allow_html=True)
+            <div class="conclusion-box">
+                <b>💡 Ghi nhớ:</b><br>
+                Khi số lần gieo <b>n</b> ngày càng lớn (thực nghiệm nhiều lần), 
+                xác suất thực nghiệm sẽ càng gần với xác suất lý thuyết. 
+                Đây chính là mối liên hệ mật thiết giữa thực hành và lý thuyết trong toán học!
+            </div>
+            """, unsafe_allow_html=True)
+    else:
+        st.info("Mời cô nhấn nút 'GIEO XÚC XẮC' để bắt đầu phân tích kết quả.")
