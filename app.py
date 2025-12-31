@@ -1,155 +1,150 @@
 import streamlit as st
 import random
 import pandas as pd
-import plotly.express as px
 import time
 
-# --- CẤU HÌNH TRANG ---
+# 1. Cấu hình màn hình tràn tỉ lệ 16:9
 st.set_page_config(layout="wide", page_title="Mô phỏng Xúc xắc 3D")
 
-# --- CSS VÀ JAVASCRIPT ĐỂ TẠO HÌNH ẢNH & ÂM THANH ---
+# 2. CSS để tạo giao diện và hiệu ứng xúc xắc
 st.markdown("""
     <style>
-    /* 1. Tạo hình ảnh mặt xúc xắc bằng CSS */
-    .dice-container {
+    .main { background-color: #f0f2f6; }
+    .dice-box {
         display: flex;
         justify-content: center;
-        gap: 20px;
-        margin: 20px 0;
+        align-items: center;
+        height: 200px;
+        background: white;
+        border-radius: 20px;
+        box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
     }
-    .die {
-        width: 100px;
-        height: 100px;
-        background-color: white;
-        border: 4px solid #333;
-        border-radius: 15px;
-        position: relative;
-        box-shadow: 5px 5px 15px rgba(0,0,0,0.3);
+    .dice-img {
+        width: 120px;
+        height: 120px;
+        filter: drop-shadow(5px 5px 10px rgba(0,0,0,0.3));
     }
-    /* Các chấm tròn trên mặt xúc xắc */
-    .dot {
-        width: 18px;
-        height: 18px;
-        background-color: #e74c3c;
-        border-radius: 50%;
-        position: absolute;
+    .stButton>button {
+        background: linear-gradient(135deg, #6e8efb, #a777e3);
+        color: white;
+        font-weight: bold;
+        border-radius: 10px;
+        border: none;
+        padding: 10px;
     }
-    /* Vị trí các chấm (tối đa 6 chấm) */
-    .dot-center { top: 50%; left: 50%; transform: translate(-50%, -50%); }
-    .dot-top-left { top: 15%; left: 15%; }
-    .dot-top-right { top: 15%; right: 15%; }
-    .dot-mid-left { top: 50%; left: 15%; transform: translateY(-50%); }
-    .dot-mid-right { top: 50%; right: 15%; transform: translateY(-50%); }
-    .dot-bot-left { bottom: 15%; left: 15%; }
-    .dot-bot-right { bottom: 15%; right: 15%; }
-
-    /* 2. Hiệu ứng rung lắc mạnh */
-    @keyframes shake {
-        0% { transform: rotate(0deg) scale(1); }
-        25% { transform: rotate(10deg) scale(1.1); }
-        50% { transform: rotate(-10deg) scale(0.9); }
-        75% { transform: rotate(5deg) scale(1.1); }
-        100% { transform: rotate(0deg) scale(1); }
-    }
-    .rolling { animation: shake 0.2s infinite; }
     </style>
     """, unsafe_allow_html=True)
 
-# Hàm vẽ mặt xúc xắc bằng HTML (Dùng cho cả lúc đang quay và kết quả)
-def get_dice_html(value, is_rolling=False):
-    dots = ""
-    if value == 1: dots = '<div class="dot dot-center"></div>'
-    elif value == 2: dots = '<div class="dot dot-top-left"></div><div class="dot dot-bot-right"></div>'
-    elif value == 3: dots = '<div class="dot dot-top-left"></div><div class="dot dot-center"></div><div class="dot dot-bot-right"></div>'
-    elif value == 4: dots = '<div class="dot dot-top-left"></div><div class="dot dot-top-right"></div><div class="dot dot-bot-left"></div><div class="dot dot-bot-right"></div>'
-    elif value == 5: dots = '<div class="dot dot-top-left"></div><div class="dot dot-top-right"></div><div class="dot dot-center"></div><div class="dot dot-bot-left"></div><div class="dot dot-bot-right"></div>'
-    elif value == 6: dots = '<div class="dot dot-top-left"></div><div class="dot dot-top-right"></div><div class="dot dot-mid-left"></div><div class="dot dot-mid-right"></div><div class="dot dot-bot-left"></div><div class="dot dot-bot-right"></div>'
-    
-    roll_class = "rolling" if is_rolling else ""
-    return f'<div class="die {roll_class}">{dots}</div>'
-
-# Hàm kích hoạt âm thanh bằng JavaScript
-def play_dice_sound():
+# 3. Hàm phát âm thanh bằng JavaScript (Vượt rào cản trình duyệt)
+def play_sound():
     sound_url = "https://www.soundjay.com/misc/sounds/dice-roll-1.mp3"
     st.components.v1.html(f"""
         <script>
             var audio = new Audio("{sound_url}");
-            audio.play();
+            audio.play().catch(e => console.log("Âm thanh bị chặn, cần tương tác trước"));
         </script>
     """, height=0)
 
-# --- GIAO DIỆN CHÍNH ---
-st.title("🎲 Trình mô phỏng Xác suất Học đường")
-
+# --- CHIA LAYOUT THEO TỈ LỆ 1/4 : 3/8 : 3/8 ---
 col_left, col_center, col_right = st.columns([1, 1.5, 1.5])
 
-# --- CỘT TRÁI: ĐIỀU KHIỂN ---
+# --- CỘT TRÁI (1/4): ĐIỀU KHIỂN ---
 with col_left:
-    st.header("⚙️ Cài đặt")
-    num_dice = st.radio("Số lượng xúc xắc:", [1, 2], horizontal=True)
-    num_trials = st.number_input("Số lần thực nghiệm:", 1, 10000, 100)
+    st.subheader("⚙️ Cài đặt")
+    num_dice = st.selectbox("Chọn số lượng xúc xắc", [1, 2])
     
     if num_dice == 1:
-        events = {"Mặt > 4": lambda x: x[0] > 4, "Mặt chẵn": lambda x: x[0] % 2 == 0}
+        events = {
+            "Mặt chấm > 4": lambda x: x[0] > 4,
+            "Mặt chấm lẻ": lambda x: x[0] % 2 != 0,
+            "Mặt chấm chia hết cho 3": lambda x: x[0] % 3 == 0
+        }
     else:
-        events = {"Tổng chia hết cho 3": lambda x: sum(x) % 3 == 0, "Tổng bằng 7": lambda x: sum(x) == 7}
+        events = {
+            "Tổng số chấm chia hết cho 3": lambda x: sum(x) % 3 == 0,
+            "Tổng số chấm là số nguyên tố": lambda x: sum(x) in [2,3,5,7,11],
+            "Xuất hiện ít nhất một mặt 6": lambda x: 6 in x
+        }
+        
+    selected_event = st.selectbox("Chọn biến cố", list(events.keys()))
+    num_trials = st.select_slider("Số lần thực nghiệm", options=[10, 50, 100, 500, 1000, 5000], value=100)
     
-    selected_event = st.selectbox("Biến cố quan sát:", list(events.keys()))
-    btn_roll = st.button("🚀 BẮT ĐẦU GIEO", use_container_width=True)
+    btn_run = st.button("🎲 BẮT ĐẦU GIEO")
 
-# --- CỘT GIỮA: HIỆN THỊ HÌNH ẢNH & BIỂU ĐỒ ---
+# --- CỘT GIỮA (3/8): HOẠT ĐỘNG VÀ BẢNG THỐNG KÊ ---
 with col_center:
-    st.header("🎰 Hoạt động")
-    dice_placeholder = st.empty()
+    st.subheader("🎰 Mô phỏng hoạt động")
+    placeholder_dice = st.empty()
     
-    if btn_roll:
-        play_dice_sound() # Kích hoạt âm thanh
+    # URL ảnh xúc xắc (Sử dụng ảnh tĩnh chất lượng cao từ Wikimedia)
+    dice_urls = {
+        1: "https://upload.wikimedia.org/wikipedia/commons/1/1b/Dice-1-b.svg",
+        2: "https://upload.wikimedia.org/wikipedia/commons/5/5f/Dice-2-b.svg",
+        3: "https://upload.wikimedia.org/wikipedia/commons/b/b1/Dice-3-b.svg",
+        4: "https://upload.wikimedia.org/wikipedia/commons/f/fd/Dice-4-b.svg",
+        5: "https://upload.wikimedia.org/wikipedia/commons/0/08/Dice-5-b.svg",
+        6: "https://upload.wikimedia.org/wikipedia/commons/2/26/Dice-6-b.svg",
+        "rolling": "https://upload.wikimedia.org/wikipedia/commons/a/a5/Dice_rolling.gif"
+    }
+
+    if btn_run:
+        play_sound() # Phát âm thanh
+        # Hiệu ứng đang gieo (Hiện GIF)
+        with placeholder_dice.container():
+            st.markdown(f"""<div class='dice-box'><img src='{dice_urls["rolling"]}' class='dice-img'></div>""", unsafe_allow_html=True)
         
-        # Chạy hiệu ứng quay xúc xắc trong 1 giây
-        for _ in range(10):
-            d1_temp, d2_temp = random.randint(1, 6), random.randint(1, 6)
-            html = f'<div class="dice-container">{get_dice_html(d1_temp, True)}'
-            if num_dice == 2: html += get_dice_html(d2_temp, True)
-            html += '</div>'
-            dice_placeholder.markdown(html, unsafe_allow_html=True)
-            time.sleep(0.1)
+        time.sleep(1.5) # Chờ 1.5 giây để học sinh hồi hộp
         
-        # Tính kết quả thực tế
+        # Tính toán kết quả thực tế
         all_results = []
         for _ in range(num_trials):
-            r = (random.randint(1,6), random.randint(1,6) if num_dice==2 else None)
-            all_results.append(r)
+            r1 = random.randint(1, 6)
+            r2 = random.randint(1, 6) if num_dice == 2 else None
+            all_results.append((r1, r2) if r2 else (r1,))
         
-        st.session_state.all_results = all_results
+        st.session_state.data = all_results
         
-        # Hiện kết quả cuối cùng (không rung nữa)
+        # Hiện kết quả cuối cùng (Ảnh tĩnh)
         last = all_results[-1]
-        html_final = f'<div class="dice-container">{get_dice_html(last[0], False)}'
-        if num_dice == 2: html_final += get_dice_html(last[1], False)
-        html_final += '</div>'
-        dice_placeholder.markdown(html_final, unsafe_allow_html=True)
+        with placeholder_dice.container():
+            html = "<div class='dice-box'>"
+            html += f"<img src='{dice_urls[last[0]]}' class='dice-img'>"
+            if num_dice == 2:
+                html += f"<img src='{dice_urls[last[1]]}' class='dice-img' style='margin-left:20px'>"
+            html += "</div>"
+            st.markdown(html, unsafe_allow_html=True)
 
-    # Vẽ biểu đồ bảng thống kê bên dưới
-    if 'all_results' in st.session_state:
-        df = pd.DataFrame(st.session_state.all_results)
-        val_col = df[0] if num_dice == 1 else df[0] + df[1].fillna(0)
-        counts = val_col.value_counts().sort_index().reset_index()
-        counts.columns = ['Giá trị', 'Số lần']
-        st.table(counts)
+    # Bảng thống kê số lần xuất hiện
+    if 'data' in st.session_state:
+        df = pd.DataFrame(st.session_state.data)
+        if num_dice == 1:
+            stats = df[0].value_counts().sort_index().reset_index()
+            stats.columns = ['Mặt chấm', 'Số lần xuất hiện']
+        else:
+            df['Tổng'] = df[0] + df[1]
+            stats = df['Tổng'].value_counts().sort_index().reset_index()
+            stats.columns = ['Tổng số chấm', 'Số lần xuất hiện']
+        
+        st.write("**Bảng kết quả thực nghiệm:**")
+        st.dataframe(stats, use_container_width=True)
 
-# --- CỘT PHẢI: KHÔNG GIAN MẪU & XÁC SUẤT ---
+# --- CỘT PHẢI (3/8): PHÂN TÍCH ---
 with col_right:
-    st.header("📊 Phân tích")
-    show_sample = st.checkbox("Hiện Không gian mẫu (Ω)")
+    st.subheader("📊 Phân tích kết quả")
+    
+    show_sample = st.toggle("Hiện Không gian mẫu (Ω)")
     if show_sample:
-        if num_dice == 1: st.write("$\Omega = \{1, 2, 3, 4, 5, 6\}$")
-        else: st.write("$n(\Omega) = 36$ kết quả có thể xảy ra.")
-        
-    if 'all_results' in st.session_state:
+        if num_dice == 1: st.code("Ω = {1, 2, 3, 4, 5, 6}")
+        else: st.code("Ω = {(1,1), (1,2), ..., (6,6)} -> 36 kết quả")
+
+    show_prob = st.toggle("Hiện Xác suất biến cố")
+    if show_prob and 'data' in st.session_state:
         check_fn = events[selected_event]
-        success = sum(1 for r in st.session_state.all_results if check_fn(r))
-        prob = success / num_trials
+        success_count = sum(1 for r in st.session_state.data if check_fn(r))
+        prob_exp = success_count / num_trials
         
-        st.info(f"**Biến cố:** {selected_event}")
-        st.metric("Xác suất thực nghiệm", f"{prob:.2%}")
-        st.progress(prob)
+        st.success(f"Biến cố: {selected_event}")
+        st.metric("Xác suất thực nghiệm P(A)", f"{prob_exp:.2%}")
+        st.info(f"Giải thích: Xuất hiện {success_count} lần trong tổng số {num_trials} lần gieo.")
+        st.progress(prob_exp)
